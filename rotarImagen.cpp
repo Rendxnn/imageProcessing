@@ -15,14 +15,15 @@ vector<int> calcularPosicion(vector<int> coordenadas, int anguloGrados) {
     vector<vector<double>> matrizTransformacion = {{coseno, -seno}, {seno, coseno}};
     vector<int> nuevasCoordenadas = {0, 0};
     
-    nuevasCoordenadas[0] = coordenadas[0] * matrizTransformacion[0][0] + coordenadas[1] * matrizTransformacion[0][1];
-    nuevasCoordenadas[1] = coordenadas[0] * matrizTransformacion[1][0] + coordenadas[1] * matrizTransformacion[1][1];
+    nuevasCoordenadas[0] = static_cast<int>(round(coordenadas[0] * matrizTransformacion[0][0] + coordenadas[1] * matrizTransformacion[0][1]));
+    nuevasCoordenadas[1] = static_cast<int>(round(coordenadas[0] * matrizTransformacion[1][0] + coordenadas[1] * matrizTransformacion[1][1]));
 
     return nuevasCoordenadas;
 }
 
 vector<vector<Pixel>> rotarImagen(vector<vector<Pixel>> imagen, int anguloGrados) {
-    vector<vector<Pixel>> imagenRotada(imagen.size(), vector<Pixel>(imagen[0].size()));
+    int lado = max(imagen.size(), imagen[0].size());
+    vector<vector<Pixel>> imagenRotada(lado, vector<Pixel>(lado));
 
     int alto = imagen.size();
     int ancho = imagen[0].size();
@@ -40,7 +41,7 @@ vector<vector<Pixel>> rotarImagen(vector<vector<Pixel>> imagen, int anguloGrados
             iNuevo = nuevasCoordenadas[0] + alto / 2;
             jNuevo = nuevasCoordenadas[1] + ancho / 2;
 
-            if (iNuevo >= 0 && iNuevo < ancho && jNuevo >= 0 && jNuevo < alto) {
+            if (iNuevo >= 0 && iNuevo < lado && jNuevo >= 0 && jNuevo < lado) {
                 imagenRotada[iNuevo][jNuevo].red = imagen[i][j].red;
                 imagenRotada[iNuevo][jNuevo].green = imagen[i][j].green;
                 imagenRotada[iNuevo][jNuevo].blue = imagen[i][j].blue;
