@@ -56,7 +56,7 @@ vector<vector<Pixel>> leerArchivoBMP(const char* nombreArchivo) {
 
     vector<vector<Pixel>> matriz(header.height, vector<Pixel>(header.width));
 
-    #pragma opm parallel for
+    //#pragma opm parallel for
     for (int i = 0; i < header.height; ++i) {
         for (int j = 0; j < header.width; ++j) {
             archivo.read(reinterpret_cast<char*>(&matriz[i][j]), sizeof(Pixel));
@@ -107,61 +107,4 @@ void guardarMatrizEnBMP(const char* nombreArchivo, const vector<vector<Pixel>>& 
         }
     }
     archivo.close();
-}
-
-vector<vector<Pixel>> umbralizarMedia(vector<vector<Pixel>> matriz) {
-    vector<vector<Pixel>> umbralizada(matriz.size(), vector<Pixel>(matriz[0].size()));
-    int intensidad_actual = 0;
-    int media_intensidades = 0;
-    int cantidad_intensidades = 0;
-
-
-    for (int i = 0; i < matriz.size(); i++) {
-        for (int j = 0; j < matriz[i].size(); j++) {
-            intensidad_actual = matriz[i][j].red * 0.299 + matriz[i][j].green * 0.587 + matriz[i][j].blue * 0.114;
-            cantidad_intensidades++;
-            media_intensidades += intensidad_actual;
-        }
-    }
-    media_intensidades /= cantidad_intensidades;
-    cout << "la media de las intesidades es: " << media_intensidades; 
-    for (int i = 0; i < matriz.size(); i++) {
-        for (int j = 0; j < matriz[i].size(); j++) {
-            intensidad_actual = matriz[i][j].red * 0.299 + matriz[i][j].green * 0.587 + matriz[i][j].blue * 0.114;
-            if (intensidad_actual < media_intensidades) {
-                umbralizada[i][j].red = 255;
-                umbralizada[i][j].green = 255;
-                umbralizada[i][j].blue = 255;
-            }
-            else {
-                umbralizada[i][j].red = 0;
-                umbralizada[i][j].green = 0;
-                umbralizada[i][j].blue = 0;
-            }
-        }
-    }
-    return umbralizada;
-
-}
-
-int main(int argc, char* argv[]) {
-    if (argc != 3) {
-        cerr << "Uso: " << argv[0] << " <nombre_del_archivo_entrada.bmp> <nombre_del_archivo_salida.bmp>" << endl;
-        return 1;
-    }
-    const char* nombreArchivoLecturaBMP = argv[1];
-    const char* nombreArchivoEscrituraBMP = argv[2];
-
-
-    // Leer el archivo BMP y obtener la matriz de píxeles
-    vector<vector<Pixel>> matriz = leerArchivoBMP(nombreArchivoLecturaBMP);
-
-    // Realizar operaciones en la matriz si es necesario...
-
-    // Guardar la matriz en un nuevo archivo BMP
-
-    vector<vector<Pixel>> umbralizada = umbralizarMedia(matriz); 
-    guardarMatrizEnBMP(nombreArchivoEscrituraBMP, umbralizada);
-
-    return 0;
 }
