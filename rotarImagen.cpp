@@ -2,6 +2,9 @@
 #include <cmath>
 #include <iostream>
 #include <vector>
+#include <omp.h>
+#include <chrono>
+#include <thread>
 
 using namespace std;
 
@@ -21,25 +24,69 @@ vector<int> calcularPosicion(vector<int> coordenadas, int anguloGrados) {
     return nuevasCoordenadas;
 }
 
-vector<vector<Pixel>> rotarImagen(vector<vector<Pixel>> imagen, int anguloGrados) {
+void rotarImagen(vector<vector<Pixel>>& imagen, vector<vector<Pixel>>& imagenRotada, int anguloGrados, int filaInicial, int filaFinal) {
     int lado = max(imagen.size(), imagen[0].size());
-    vector<vector<Pixel>> imagenRotada(lado, vector<Pixel>(lado));
-
-    int alto = imagen.size();
-    int ancho = imagen[0].size();
 
     int iNuevo = 0;
     int jNuevo = 0;
 
-    
-    for (int i = 0; i < imagen.size(); i++) {
+    for (int i = filaInicial; i < filaFinal; i++) {
         for (int j = 0; j < imagen[i].size(); j++) {
-
-            vector<int> coordenadas = {i - alto / 2, j - alto / 2};
+            vector<int> coordenadas = {i - lado / 2, j - lado / 2};
             vector<int> nuevasCoordenadas = calcularPosicion(coordenadas, anguloGrados);
 
-            iNuevo = nuevasCoordenadas[0] + alto / 2;
-            jNuevo = nuevasCoordenadas[1] + ancho / 2;
+            iNuevo = nuevasCoordenadas[0] + lado / 2;
+            jNuevo = nuevasCoordenadas[1] + lado / 2;
+
+            if (iNuevo >= 0 && iNuevo < lado && jNuevo >= 0 && jNuevo < lado) {
+                // Asigna directamente los valores de los píxeles
+                imagenRotada[iNuevo][jNuevo].red = imagen[i][j].red;
+                imagenRotada[iNuevo][jNuevo].green = imagen[i][j].green;
+                imagenRotada[iNuevo][jNuevo].blue = imagen[i][j].blue;
+            }
+        }
+    }
+    return;
+}
+
+
+void rotarImagenHilos(vector<vector<Pixel>>& imagen, vector<vector<Pixel>>& nuevaImagen, int anguloGrados) {
+    int numHilos = omp_get_max_threads();
+    vector<thread> hilos;
+    int filasPorHilo = imagen.size() / numHilos;
+    for (int i = 0; i < numHilos; i++) {
+        int inicioFila = i * filasPorHilo;
+        int finFila = (i == numHilos - 1) ? imagen.size() : (i + 1) * filasPorHilo;
+        hilos.emplace_back([&imagen, &nuevaImagen, inicioFila, finFila, anguloGrados]() {
+            rotarImagen(imagen, nuevaImagen, anguloGrados, inicioFila, finFila);
+        });
+    }
+    for (std::thread& hilo : hilos) {
+        hilo.join();
+    }
+}
+
+
+
+
+
+vector<vector<Pixel>> rotarImagenOMP(vector<vector<Pixel>> imagen, int anguloGrados) {
+    int lado = max(imagen.size(), imagen[0].size());
+    vector<vector<Pixel>> imagenRotada(lado, vector<Pixel>(lado));
+
+    int iNuevo = 0;
+    int jNuevo = 0;
+
+     
+    for (int i = 0; i < imagen.size(); i++) {
+        #pragma omp parallel for
+        for (int j = 0; j < imagen[i].size(); j++) {
+
+            vector<int> coordenadas = {i - lado / 2, j - lado / 2};
+            vector<int> nuevasCoordenadas = calcularPosicion(coordenadas, anguloGrados);
+
+            iNuevo = nuevasCoordenadas[0] + lado / 2;
+            jNuevo = nuevasCoordenadas[1] + lado / 2;
 
             if (iNuevo >= 0 && iNuevo < lado && jNuevo >= 0 && jNuevo < lado) {
                 imagenRotada[iNuevo][jNuevo].red = imagen[i][j].red;
@@ -64,14 +111,39 @@ int main(int argc, char* argv[]) {
     const char* nombreArchivoEscrituraBMP = argv[2];
     int gradosRotar = atoi(argv[3]);
 
-    // Leer el archivo BMP y obtener la matriz de píxeles
+
     vector<vector<Pixel>> imagen = leerArchivoBMP(nombreArchivoLecturaBMP);
 
+    int lado = max(imagen.size(), imagen[0].size());
+    vector<vector<Pixel>> imagenRotada(lado, vector<Pixel>(lado));
 
-    vector<vector<Pixel>> imagenRotada = rotarImagen(imagen, gradosRotar);
+    auto inicio_rotar = chrono::high_resolution_clock::now();
+    rotarImagen(imagen, imagenRotada, gradosRotar, 0, imagen.size());
+    auto final_rotar = chrono::high_resolution_clock::now();
+    auto duracion_rotar = chrono::duration_cast<chrono::microseconds>(final_rotar - inicio_rotar);
+    cout << "Tiempo de ejecucion secuencial: " << duracion_rotar.count() << " micosegundos" << endl;
+
+
+    vector<vector<Pixel>> imagenRotadaHilos(lado, vector<Pixel>(lado));
+
+    auto inicio_rotar_hilos = chrono::high_resolution_clock::now();
+    rotarImagenHilos(imagen, imagenRotadaHilos, gradosRotar);
+    auto final_rotar_hilos = chrono::high_resolution_clock::now();
+    auto duracion_rotar_hilos = chrono::duration_cast<chrono::microseconds>(final_rotar_hilos - inicio_rotar_hilos);
+    cout << "Tiempo de ejecucion hilos: " << duracion_rotar_hilos.count() << " micosegundos" << endl;
+
+
+    //auto inicio_rotar_paralelo = chrono::high_resolution_clock::now();
+    //vector<vector<Pixel>> imagenRotadaOMP = rotarImagenOMP(imagen, gradosRotar);
+    //auto final_rotar_paralelo = chrono::high_resolution_clock::now();
+    //auto duracion_rotar_paralelo = chrono::duration_cast<chrono::microseconds>(final_rotar_paralelo - inicio_rotar_paralelo);
+    //cout << "Tiempo de ejecucion OMP: " << duracion_rotar_paralelo.count() << " micosegundos" << endl << endl;
+
+    guardarMatrizEnBMP(nombreArchivoEscrituraBMP, imagenRotadaHilos);
+
+
+    cout << "hilos superó a secuancial por: " << duracion_rotar.count() - duracion_rotar_hilos.count() << " microsegundos" << endl;
     
-
-    guardarMatrizEnBMP(nombreArchivoEscrituraBMP, imagenRotada);
 
     return 0;
 }

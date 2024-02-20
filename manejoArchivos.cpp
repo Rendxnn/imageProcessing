@@ -101,7 +101,7 @@ void guardarMatrizEnBMP(const char* nombreArchivo, const vector<vector<Pixel>>& 
             archivo.write(reinterpret_cast<const char*>(&matriz[i][j]), sizeof(Pixel));
         }
         // Rellenar con bytes de 0 para la alineación de 4 bytes
-        for (int k = 0; k < matriz[0].size() % 4; ++k) {
+        for (int k = 0; k < matriz[i].size() % 4; ++k) {
             char paddingByte = 0;
             archivo.write(&paddingByte, 1);
         }
