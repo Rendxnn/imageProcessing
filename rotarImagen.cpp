@@ -24,19 +24,22 @@ vector<int> calcularPosicion(vector<int> coordenadas, int anguloGrados) {
     return nuevasCoordenadas;
 }
 
+
 void rotarImagen(vector<vector<Pixel>>& imagen, vector<vector<Pixel>>& imagenRotada, int anguloGrados, int filaInicial, int filaFinal) {
     int lado = max(imagen.size(), imagen[0].size());
+    int largo = imagen.size();
+    int ancho = imagen[0].size();
 
     int iNuevo = 0;
     int jNuevo = 0;
 
     for (int i = filaInicial; i < filaFinal; i++) {
         for (int j = 0; j < imagen[i].size(); j++) {
-            vector<int> coordenadas = {i - lado / 2, j - lado / 2};
+            vector<int> coordenadas = {i - largo / 2, j - ancho / 2};
             vector<int> nuevasCoordenadas = calcularPosicion(coordenadas, anguloGrados);
 
-            iNuevo = nuevasCoordenadas[0] + lado / 2;
-            jNuevo = nuevasCoordenadas[1] + lado / 2;
+            iNuevo = nuevasCoordenadas[0] + largo / 2;
+            jNuevo = nuevasCoordenadas[1] + ancho / 2;
 
             if (iNuevo >= 0 && iNuevo < lado && jNuevo >= 0 && jNuevo < lado) {
                 // Asigna directamente los valores de los píxeles
