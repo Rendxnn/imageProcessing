@@ -71,40 +71,6 @@ void rotarImagenHilos(vector<vector<Pixel>>& imagen, vector<vector<Pixel>>& nuev
 
 
 
-
-
-vector<vector<Pixel>> rotarImagenOMP(vector<vector<Pixel>> imagen, int anguloGrados) {
-    int lado = max(imagen.size(), imagen[0].size());
-    vector<vector<Pixel>> imagenRotada(lado, vector<Pixel>(lado));
-
-    int iNuevo = 0;
-    int jNuevo = 0;
-
-     
-    for (int i = 0; i < imagen.size(); i++) {
-        #pragma omp parallel for
-        for (int j = 0; j < imagen[i].size(); j++) {
-
-            vector<int> coordenadas = {i - lado / 2, j - lado / 2};
-            vector<int> nuevasCoordenadas = calcularPosicion(coordenadas, anguloGrados);
-
-            iNuevo = nuevasCoordenadas[0] + lado / 2;
-            jNuevo = nuevasCoordenadas[1] + lado / 2;
-
-            if (iNuevo >= 0 && iNuevo < lado && jNuevo >= 0 && jNuevo < lado) {
-                imagenRotada[iNuevo][jNuevo].red = imagen[i][j].red;
-                imagenRotada[iNuevo][jNuevo].green = imagen[i][j].green;
-                imagenRotada[iNuevo][jNuevo].blue = imagen[i][j].blue;
-            }
-        }
-
-    }
-
-    return imagenRotada;
-}
-
-
-
 int main(int argc, char* argv[]) {
     if (argc != 4) {
         cerr << "Uso: " << argv[0] << " <nombre_del_archivo_entrada.bmp> <nombre_del_archivo_salida.bmp> <cantidad de grados a rotar>" << endl;
